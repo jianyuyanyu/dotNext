@@ -115,7 +115,7 @@ public partial class AsyncStateTracker
             }
         }
 
-        return factory.Invoke(InfiniteTimeSpan, token);
+        return factory.Invoke(token);
 
         static ISupplier<TimeSpan, CancellationToken, ValueTask<bool>> GetFactory(bool value)
             => value ? QueuedSynchronizer.TrueValueFactory : QueuedSynchronizer.FalseValueFactory;
