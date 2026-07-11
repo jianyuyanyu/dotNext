@@ -139,7 +139,7 @@ public class ValueTaskCompletionSource<T> : ManualResetCompletionSource, IValueT
 
     /// <inheritdoc />
     ValueTask ISupplier<TimeSpan, CancellationToken, ValueTask>.Invoke(TimeSpan timeout, CancellationToken token)
-        => Activate(timeout, token) is { } version ? new(this, version) : throw new InvalidOperationException(ExceptionMessages.InvalidSourceState);
+        => new(this, Activate(timeout, token));
 
     private T GetResult(short token)
     {
