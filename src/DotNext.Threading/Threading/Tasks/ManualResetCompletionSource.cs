@@ -57,7 +57,7 @@ public abstract partial class ManualResetCompletionSource
     {
         var newVersion = ResetCore();
         CompletionData = null;
-        ResetCancellationState<ManualResetOptions>();
+        ResetCancellationState<ResetAllOptions>();
         CleanUp();
         return newVersion;
     }
@@ -93,7 +93,7 @@ public abstract partial class ManualResetCompletionSource
         }
         else
         {
-            NotifyConsumer<ManualResetOptions>();
+            NotifyConsumer<ResetAllOptions>();
         }
     }
     

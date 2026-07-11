@@ -59,7 +59,7 @@ partial class ManualResetCompletionSource
     }
 
     [StructLayout(LayoutKind.Auto)]
-    private readonly ref struct ManualResetOptions : IResetOptions
+    private readonly ref struct ResetAllOptions : IResetOptions
     {
         static bool IResetOptions.IsTimeout => false;
 
