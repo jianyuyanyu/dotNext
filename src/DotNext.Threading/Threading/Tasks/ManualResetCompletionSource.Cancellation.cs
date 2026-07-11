@@ -22,11 +22,25 @@ partial class ManualResetCompletionSource
             }
             finally
             {
-                if (EndCompletion())
-                {
-                    NotifyConsumer<TReason>();
-                }
+                EndCompletion<TReason>();
             }
+        }
+    }
+
+    private void EndCompletion<TOptions>()
+        where TOptions : struct, IResetOptions, allows ref struct
+    {
+        if (!EndCompletion())
+        {
+            // do nothing
+        }
+        else if (IsActivating)
+        {
+            NotifyConsumer<DoNotResetOptions>();
+        }
+        else
+        {
+            NotifyConsumer<TOptions>();
         }
     }
     
@@ -82,5 +96,13 @@ partial class ManualResetCompletionSource
         }
         
         short ICancellationReason.Version => version;
+    }
+
+    [StructLayout(LayoutKind.Auto)]
+    private readonly ref struct DoNotResetOptions : IResetOptions
+    {
+        static bool IResetOptions.IsTimeout => true;
+
+        static bool IResetOptions.IsCancellation => true;
     }
 }
