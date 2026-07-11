@@ -93,12 +93,12 @@ public sealed class ValueTaskCompletionSourceTests : Test
     public static async Task Reuse(bool runContinuationsAsynchronously)
     {
         var source = new ValueTaskCompletionSource(runContinuationsAsynchronously);
-        var task = source.CreateTask(InfiniteTimeSpan, TestToken);
+        var task = source.CreateTask(InfiniteTimeSpan, CancellationToken.None);
         True(source.TrySetResult());
         await task;
 
         source.Reset();
-        task = source.CreateTask(InfiniteTimeSpan, TestToken);
+        task = source.CreateTask(InfiniteTimeSpan, CancellationToken.None);
         True(source.TrySetResult());
         await task;
     }
@@ -236,5 +236,21 @@ public sealed class ValueTaskCompletionSourceTests : Test
         });
 
         await task.Task;
+    }
+
+    [Fact]
+    public static async Task ImmediateTimeout()
+    {
+        var source = new ValueTaskCompletionSource();
+        var task = source.CreateTask(TimeSpan.Zero, TestToken);
+        True(task.IsCompleted);
+        await ThrowsAsync<TimeoutException>(task.AsTask);
+    }
+
+    [Fact]
+    public static void ThrowOnInvalidTimeout()
+    {
+        var source = new ValueTaskCompletionSource();
+        Throws<ArgumentOutOfRangeException>(() => source.CreateTask(TimeSpan.MinValue, TestToken));
     }
 }
