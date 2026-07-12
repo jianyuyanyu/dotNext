@@ -43,7 +43,7 @@ public abstract class DelayedTask
         }
     }
 
-    private protected virtual void Cleanup() => Interlocked.Exchange(ref tokenSource, null)?.Dispose();
+    private protected void Cleanup() => Interlocked.Exchange(ref tokenSource, null)?.Dispose();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static void GetResultAndClear(ref ConfiguredTaskAwaitable.ConfiguredTaskAwaiter awaiter)
@@ -51,14 +51,6 @@ public abstract class DelayedTask
         var awaiterCopy = awaiter;
         awaiter = default;
         awaiterCopy.GetResult();
-    }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static T GetResultAndClear<T>(ref ConfiguredValueTaskAwaitable<T>.ConfiguredValueTaskAwaiter awaiter)
-    {
-        var awaiterCopy = awaiter;
-        awaiter = default;
-        return awaiterCopy.GetResult();
     }
 
     /// <summary>

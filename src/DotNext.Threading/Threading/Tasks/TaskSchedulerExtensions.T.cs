@@ -106,5 +106,13 @@ file sealed class DelayedTaskStateMachine<TArgs, TResult> : DelayedTask<TResult>
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static TResult GetResultAndClear(ref ConfiguredValueTaskAwaitable<TResult>.ConfiguredValueTaskAwaiter awaiter)
+    {
+        var awaiterCopy = awaiter;
+        awaiter = default;
+        return awaiterCopy.GetResult();
+    }
+
     private protected override void SetException(Exception e) => builder.SetException(e);
 }
