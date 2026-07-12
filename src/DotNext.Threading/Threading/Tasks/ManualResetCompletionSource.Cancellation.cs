@@ -22,25 +22,11 @@ partial class ManualResetCompletionSource
             }
             finally
             {
-                EndCompletion<TReason>();
+                if (EndCompletion())
+                {
+                    NotifyConsumer<TReason>();
+                }
             }
-        }
-    }
-
-    private void EndCompletion<TOptions>()
-        where TOptions : struct, IResetOptions, allows ref struct
-    {
-        if (!EndCompletion())
-        {
-            // do nothing
-        }
-        else if (IsActivating)
-        {
-            NotifyConsumer<DoNotResetOptions>();
-        }
-        else
-        {
-            NotifyConsumer<TOptions>();
         }
     }
     

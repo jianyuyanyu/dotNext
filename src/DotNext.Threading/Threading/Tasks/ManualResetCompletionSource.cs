@@ -79,23 +79,7 @@ public abstract partial class ManualResetCompletionSource
         private set; // protected by completion states
     }
 
-    internal void NotifyConsumer()
-    {
-        // Completion (this call) can happen concurrently with an in-progress activation, but never
-        // the other way round: activation cannot start once completion has begun. If activation is
-        // still in flight, Activate() may still be writing tokenTracker/timeoutTracker, so touching
-        // them here would race with that thread. Skip the reset entirely in that case: the next
-        // Reset() call is a safe place to do it instead, since it spins until activation is
-        // guaranteed to have fully finished before resetting cancellation state itself.
-        if (IsActivating)
-        {
-            NotifyConsumer<DoNotResetOptions>();
-        }
-        else
-        {
-            NotifyConsumer<ResetAllOptions>();
-        }
-    }
+    internal void NotifyConsumer() => NotifyConsumer<ResetAllOptions>();
     
     private void NotifyConsumer<TOptions>()
         where TOptions : struct, IResetOptions, allows ref struct

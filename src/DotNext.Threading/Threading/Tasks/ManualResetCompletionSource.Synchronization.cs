@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace DotNext.Threading.Tasks;
@@ -30,9 +29,6 @@ partial class ManualResetCompletionSource
     private uint syncState;
 
     internal short CurrentVersion => GetVersion(syncState);
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private bool IsActivating => (Volatile.Read(in syncState) & ActivatedState) is ActivatingState;
 
     private short ResetCore()
     {
