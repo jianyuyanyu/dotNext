@@ -122,6 +122,8 @@ public abstract partial class ManualResetCompletionSource
         if (!TOptions.IsCancellation && !tokenTracker.UnregisterAndReuse())
         {
             cachedVersion = null;
+            timeoutTracker?.Dispose();
+            timeoutTracker = null;
         }
     }
 
@@ -351,7 +353,10 @@ file static class CancellationTokenRegistrationExtensions
         else if (LinkedCancellationTokenSource.CanInlineToken)
         {
             var source = Unsafe.BitCast<CancellationToken, ValueTuple<CancellationTokenSource>>(token).Item1;
-            unregistered = registration.Unregister() && (!source.IsCancellationRequested || IsCancellationCompleted(source));
+            
+            // If unregistered, the callback cannot be invoked by cancellation.
+            // Otherwise, the callback can be in-flight.
+            unregistered = registration.Unregister() || !source.IsCancellationRequested || IsCancellationCompleted(source);
         }
         else
         {
