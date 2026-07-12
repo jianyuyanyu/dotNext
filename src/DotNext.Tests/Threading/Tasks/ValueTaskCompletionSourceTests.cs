@@ -69,7 +69,7 @@ public sealed class ValueTaskCompletionSourceTests : Test
         var task = source.CreateTask(InfiniteTimeSpan, TestToken);
 
         // attach a consumer without consuming the task
-        task.GetAwaiter().OnCompleted(static () => { });
+        task.GetAwaiter().OnCompleted(Action.NoOp);
 
         // abandoning a task with the attached consumer is not allowed: the consumer would hang
         Throws<InvalidOperationException>(() => source.Reset());
