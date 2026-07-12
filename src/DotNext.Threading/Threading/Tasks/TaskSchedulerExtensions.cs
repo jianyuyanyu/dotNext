@@ -101,17 +101,12 @@ file sealed class DelayedTaskStateMachine<TArgs> : DelayedTask
                 break;
             default:
                 callbackAwaiter.GetResult();
-                builder.SetResult();
+                callbackAwaiter = default;
+                delayAwaiter = default;
                 Cleanup();
+                builder.SetResult();
                 break;
         }
-    }
-
-    private protected override void Cleanup()
-    {
-        callbackAwaiter = default;
-        delayAwaiter = default;
-        base.Cleanup();
     }
 
     private protected override void SetException(Exception e) => builder.SetException(e);

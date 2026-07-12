@@ -99,17 +99,11 @@ file sealed class DelayedTaskStateMachine<TArgs, TResult> : DelayedTask<TResult>
                 Await(ref callbackAwaiter);
                 break;
             default:
-                builder.SetResult(callbackAwaiter.GetResult());
+                delayAwaiter = default;
                 Cleanup();
+                builder.SetResult(GetResultAndClear(ref callbackAwaiter));
                 break;
         }
-    }
-
-    private protected override void Cleanup()
-    {
-        delayAwaiter = default;
-        callbackAwaiter = default;
-        base.Cleanup();
     }
 
     private protected override void SetException(Exception e) => builder.SetException(e);

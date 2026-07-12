@@ -207,23 +207,28 @@ public class ValueTaskCompletionSource<T> : ManualResetCompletionSource, IValueT
 
         private void OnCompleted()
         {
-            if (source is not null)
+            var sourceCopy = source;
+            source = null;
+            if (sourceCopy is not null)
             {
+                T result;
                 try
                 {
-                    TrySetResult(source.GetResult(version));
+                    result = sourceCopy.GetResult(version);
                 }
                 catch (OperationCanceledException e)
                 {
                     TrySetCanceled(e.CancellationToken);
+                    return;
                 }
                 catch (Exception e)
                 {
                     TrySetException(e);
+                    return;
                 }
-            }
 
-            source = null;
+                TrySetResult(result);
+            }
         }
     }
     

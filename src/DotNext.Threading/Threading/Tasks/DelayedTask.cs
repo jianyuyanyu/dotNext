@@ -48,8 +48,17 @@ public abstract class DelayedTask
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static void GetResultAndClear(ref ConfiguredTaskAwaitable.ConfiguredTaskAwaiter awaiter)
     {
-        awaiter.GetResult();
+        var awaiterCopy = awaiter;
         awaiter = default;
+        awaiterCopy.GetResult();
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private protected static T GetResultAndClear<T>(ref ConfiguredValueTaskAwaitable<T>.ConfiguredValueTaskAwaiter awaiter)
+    {
+        var awaiterCopy = awaiter;
+        awaiter = default;
+        return awaiterCopy.GetResult();
     }
 
     /// <summary>
