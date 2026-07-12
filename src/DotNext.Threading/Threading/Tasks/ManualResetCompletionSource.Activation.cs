@@ -47,8 +47,7 @@ partial class ManualResetCompletionSource
         timeoutCallback ??= TimeoutOccurred;
         CachedVersion = version;
 
-        timeoutTracker ??= new(timeoutCallback, cachedVersion);
-        timeoutTracker.Change(timeout);
+        Arm(ref timeoutTracker, timeoutCallback, cachedVersion, timeout);
     }
     
     [MethodImpl(MethodImplOptions.NoInlining)]

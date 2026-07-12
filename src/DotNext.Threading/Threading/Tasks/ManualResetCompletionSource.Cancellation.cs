@@ -7,7 +7,6 @@ partial class ManualResetCompletionSource
     private void CancellationRequested<TReason>(TReason reason)
         where TReason : struct, ICancellationReason, allows ref struct
     {
-        var runAsynchronously = runContinuationsAsynchronously;
         if (BeginCompletion(reason.Version))
         {
             try
@@ -30,21 +29,20 @@ partial class ManualResetCompletionSource
                 else
                 {
                     CompleteAsTimedOut();
-                    runAsynchronously = true;
+
+                    // Tells TryReset() that the fired timer callback is our own completed one, so the timer
+                    // and the version box can be reused even while the callback is still unwinding.
+                    // Set after CompleteAsTimedOut(): if the user-defined timeout exception factory throws,
+                    // the flag stays false and the timer is conservatively disposed at reset time.
+                    // The write is safe against Reset(): we're inside the Completing window, so ResetCore spins.
+                    completedByTimeout = true;
                 }
             }
             finally
             {
                 if (EndCompletion())
                 {
-                    // Without running continuation asynchronously, this method executes continuation
-                    // which calls Reset() within the same thread. Reset() calls ResetCancellationState()
-                    // which can't reset timeout/cancellation states correctly:
-                    // 1. Timer.TryReset() always return false, because its second callback never reports that the timeout
-                    // callback is finished
-                    // 2. CancellationTokenRegistration.Unregister() returns false, because the current execution is
-                    // a cancellation callback.
-                    NotifyConsumer(ref continuation, runAsynchronously);
+                    NotifyConsumer();
                 }
             }
         }

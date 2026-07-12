@@ -21,7 +21,6 @@ public abstract partial class ManualResetCompletionSource
     
     // protected by activation states
     private CancellationTokenRegistration tokenTracker;
-    private Timer? timeoutTracker;
     private IBinaryInteger<short>? cachedVersion;
     
     // protected by subscription states
@@ -91,23 +90,23 @@ public abstract partial class ManualResetCompletionSource
         private set; // protected by completion states
     }
 
-    internal void NotifyConsumer() => NotifyConsumer(ref continuation, runContinuationsAsynchronously);
-
-    private static void NotifyConsumer(ref Continuation continuation, bool runAsynchronously)
+    internal void NotifyConsumer()
     {
         var continuationCopy = continuation;
         continuation = default;
-        continuationCopy.InvokeOnCapturedContext(runAsynchronously);
+        continuationCopy.InvokeOnCapturedContext(runContinuationsAsynchronously);
     }
 
     private void ResetCancellationState()
     {
-        if (timeoutTracker is { } timer && !timer.TryReset())
+        if (timeoutTracker is { } timer && !TryReset(timer, completedByTimeout))
         {
             timer.Dispose();
             timeoutTracker = null;
             cachedVersion = null;
         }
+
+        completedByTimeout = false;
 
         if (!tokenTracker.UnregisterAndReuse())
         {
