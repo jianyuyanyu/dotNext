@@ -35,6 +35,13 @@ partial class ManualResetCompletionSource
         short newVersion;
         for (uint stateCopy = syncState, tmp;; stateCopy = tmp)
         {
+            // Reset of a subscribed but unconsumed source is not allowed: it silently wipes
+            // the subscription, so the parked consumer is never notified (lost wakeup), and
+            // it races the in-flight notifier over the continuation field. The consumer must
+            // observe the completed task before the source can be reset.
+            if ((stateCopy & (SubscribedState | ConsumedState)) is SubscribedState)
+                throw new InvalidOperationException(ExceptionMessages.InvalidSourceState);
+
             // do not reset if completion, subscription, or activation is in progress
             if ((stateCopy & CompletedState) is CompletingState
                 || (stateCopy & ActivatedState) is ActivatingState

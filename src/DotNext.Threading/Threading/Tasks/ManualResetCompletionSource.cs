@@ -50,8 +50,16 @@ public abstract partial class ManualResetCompletionSource
     /// This method acts as a barrier for completion.
     /// It means that calling of this method guarantees that the task
     /// cannot be completed by the previously linked timeout or cancellation token.
+    /// <para>
+    /// The source can be reset when the previously created task is already consumed by its consumer,
+    /// or when no consumer is attached to the task (a pending task can be abandoned this way).
+    /// Calling this method while a consumer is awaiting the current task and the task is not yet
+    /// consumed is not allowed: the awaiting consumer would never be resumed. In this case,
+    /// the method throws <see cref="InvalidOperationException"/>.
+    /// </para>
     /// </remarks>
     /// <returns>The version of the uncompleted task.</returns>
+    /// <exception cref="InvalidOperationException">A consumer is subscribed to the current task, and the task is not yet consumed.</exception>
     public short Reset()
     {
         var newVersion = ResetCore();

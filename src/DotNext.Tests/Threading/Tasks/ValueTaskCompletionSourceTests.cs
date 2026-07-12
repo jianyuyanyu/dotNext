@@ -63,6 +63,19 @@ public sealed class ValueTaskCompletionSourceTests : Test
     }
 
     [Fact]
+    public static void ResetWhenSubscribed()
+    {
+        var source = new ValueTaskCompletionSource();
+        var task = source.CreateTask(InfiniteTimeSpan, TestToken);
+
+        // attach a consumer without consuming the task
+        task.GetAwaiter().OnCompleted(static () => { });
+
+        // abandoning a task with the attached consumer is not allowed: the consumer would hang
+        Throws<InvalidOperationException>(() => source.Reset());
+    }
+
+    [Fact]
     public static async Task ConsumePendingTask()
     {
         var source = new ValueTaskCompletionSource();
