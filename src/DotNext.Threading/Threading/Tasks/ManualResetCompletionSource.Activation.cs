@@ -30,9 +30,16 @@ partial class ManualResetCompletionSource
     
     private void EnableCancellation(short version, CancellationToken token)
     {
-        cancellationCallback ??= CancellationRequested;
-        CachedVersion = version;
-        tokenTracker = token.UnsafeRegister(cancellationCallback, cachedVersion);
+        if (token.IsCancellationRequested)
+        {
+            CancellationRequested(new CancellationReason(version, token));
+        }
+        else
+        {
+            cancellationCallback ??= CancellationRequested;
+            CachedVersion = version;
+            tokenTracker = token.UnsafeRegister(cancellationCallback, cachedVersion);
+        }
     }
 
     private void EnableTimeout(short version, TimeSpan timeout)

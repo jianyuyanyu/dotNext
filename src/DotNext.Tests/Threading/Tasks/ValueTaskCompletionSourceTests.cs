@@ -62,6 +62,20 @@ public sealed class ValueTaskCompletionSourceTests : Test
         Same(string.Empty, source.CompletionData);
     }
 
+    [Fact]
+    public static async Task ConsumePendingTask()
+    {
+        var source = new ValueTaskCompletionSource();
+        var task = source.CreateTask(InfiniteTimeSpan, TestToken);
+
+        // sync-over-async on a pending task must throw instead of silently consuming the source
+        Throws<InvalidOperationException>(() => task.GetAwaiter().GetResult());
+
+        // the source must stay in a valid state
+        True(source.TrySetResult());
+        await task;
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

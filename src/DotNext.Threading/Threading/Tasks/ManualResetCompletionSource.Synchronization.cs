@@ -147,25 +147,24 @@ partial class ManualResetCompletionSource
 
     private protected void Consume(short expectedToken)
     {
-        for (uint stateCopy = OverrideToken(syncState, expectedToken), tmp;; stateCopy = OverrideToken(tmp, expectedToken))
+        for (uint stateCopy = Volatile.Read(in syncState), tmp;; stateCopy = tmp)
         {
-            var expectedState = stateCopy & ~ConsumedState;
-            tmp = Interlocked.CompareExchange(ref syncState, expectedState | ConsumedState, expectedState);
-
-            if (tmp == expectedState)
-                break;
-
             string message;
-            if ((tmp & ConsumedState) is not 0)
-            {
-                message = ExceptionMessages.InvalidSourceState;
-            }
-            else if (GetVersion(tmp) != expectedToken)
+            if (GetVersion(stateCopy) != expectedToken)
             {
                 message = ExceptionMessages.InvalidSourceToken;
             }
+            else if ((stateCopy & (CompletedState | ConsumedState)) is not CompletedState)
+            {
+                // the task must be completed, but not yet consumed
+                message = ExceptionMessages.InvalidSourceState;
+            }
             else
             {
+                tmp = Interlocked.CompareExchange(ref syncState, stateCopy | ConsumedState, stateCopy);
+                if (tmp == stateCopy)
+                    break;
+
                 continue;
             }
 

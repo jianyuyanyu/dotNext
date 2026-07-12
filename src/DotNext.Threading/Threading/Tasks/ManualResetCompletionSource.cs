@@ -57,7 +57,8 @@ public abstract partial class ManualResetCompletionSource
     {
         var newVersion = ResetCore();
         CompletionData = null;
-        ResetCancellationState<ResetAllOptions>();
+        ResetCancellationState();
+        continuation = default;
         CleanUp();
         return newVersion;
     }
@@ -65,9 +66,20 @@ public abstract partial class ManualResetCompletionSource
     /// <summary>
     /// Invokes when this source is ready to reuse.
     /// </summary>
+    /// <remarks>
+    /// The default implementation releases the linked cancellation token registration,
+    /// the timeout timer, and the captured continuation, so the consumed source is not
+    /// rooted by them. In contrast to <see cref="Reset()"/>, it doesn't change the observable
+    /// state of the source: the version, <see cref="Status"/>, and <see cref="CompletionData"/>
+    /// remain intact until <see cref="Reset()"/> is called explicitly.
+    /// </remarks>
     /// <seealso cref="CompletionData"/>
     protected virtual void AfterConsumed()
     {
+        // release external roots: the CTS registration, the timer, and the captured continuation.
+        // Consumption is causally after the notification, so these fields are exclusive here.
+        ResetCancellationState();
+        continuation = default;
     }
 
     /// <summary>
@@ -79,31 +91,25 @@ public abstract partial class ManualResetCompletionSource
         private set; // protected by completion states
     }
 
-    internal void NotifyConsumer() => NotifyConsumer<ResetAllOptions>();
-    
-    private void NotifyConsumer<TOptions>()
-        where TOptions : struct, IResetOptions, allows ref struct
-    {
-        ResetCancellationState<TOptions>();
+    internal void NotifyConsumer() => NotifyConsumer(ref continuation, runContinuationsAsynchronously);
 
+    private static void NotifyConsumer(ref Continuation continuation, bool runAsynchronously)
+    {
         var continuationCopy = continuation;
         continuation = default;
-        continuationCopy.InvokeOnCapturedContext(runContinuationsAsynchronously);
+        continuationCopy.InvokeOnCapturedContext(runAsynchronously);
     }
 
-    private void ResetCancellationState<TOptions>()
-        where TOptions : struct, IResetOptions, allows ref struct
+    private void ResetCancellationState()
     {
-        // Do not reset the timer if this method is called from the timeout handler
-        if (!TOptions.IsTimeout && timeoutTracker is { } timer && !timer.TryReset())
+        if (timeoutTracker is { } timer && !timer.TryReset())
         {
             timer.Dispose();
             timeoutTracker = null;
             cachedVersion = null;
         }
 
-        // Do not unregister cancellation callback if this method is called from the cancellation handler
-        if (!TOptions.IsCancellation && !tokenTracker.UnregisterAndReuse())
+        if (!tokenTracker.UnregisterAndReuse())
         {
             cachedVersion = null;
             timeoutTracker?.Dispose();
